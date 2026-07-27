@@ -1,0 +1,250 @@
+// Football widget styles
+// Uses glassmorphism cards with a dark football aesthetic
+
+.football-container
+  max-height: 48vh
+  overflow: hidden
+  width: 22em
+  display: flex
+  flex-direction: column
+  gap: 0.6em
+  font-family: inherit
+
+  &--collapsed
+    max-height: none
+    overflow: visible
+    gap: 0
+
+  &:not(.football-container--collapsed):hover
+    overflow-y: auto
+    scrollbar-width: thin
+    scrollbar-color: rgba(255,255,255,0.2) transparent
+
+  &--empty
+    display: flex
+    flex-direction: column
+    align-items: center
+    justify-content: center
+    gap: 0.4em
+    padding: 1.2em 0
+    opacity: 0.7
+    font-size: 0.95em
+
+// ─── Header bar ──────────────────────────────────────────────────────────────
+
+.football-header
+  display: flex
+  align-items: center
+  justify-content: space-between
+  gap: 0.5em
+  padding: 0.1em 0 0.25em
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1)
+  margin-bottom: 0.1em
+  cursor: pointer
+  border-radius: 4px
+  transition: opacity 0.15s ease
+  user-select: none
+
+  &:hover
+    opacity: 0.8
+
+.football-header-title
+  font-size: 0.75em
+  font-weight: 600
+  letter-spacing: 0.05em
+  text-transform: uppercase
+  opacity: 0.6
+  user-select: none
+
+.football-header-count
+  opacity: 0.9
+  font-weight: 700
+
+.football-toggle-btn
+  opacity: 0.5
+  font-size: 0.8em
+  line-height: 1
+  flex-shrink: 0
+
+// ─── Games list ───────────────────────────────────────────────────────────────
+
+.football-games-list
+  display: flex
+  flex-direction: column
+  gap: 0.6em
+  overflow: hidden
+  .football-container:hover &
+    overflow-y: auto
+
+.football-empty-icon
+  font-size: 2em
+  line-height: 1
+
+// ─── Game card ────────────────────────────────────────────────────────────────
+
+.football-game
+  position: relative
+  background: rgba(255, 255, 255, 0.08)
+  border: 1px solid rgba(255, 255, 255, 0.12)
+  border-radius: 10px
+  padding: 0.55em 0.75em 0.6em
+  backdrop-filter: blur(8px)
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease
+
+  &--clickable
+    cursor: pointer
+    outline: none
+
+    &:hover
+      background: rgba(255, 255, 255, 0.13)
+      transform: translateY(-1px)
+
+    &:focus-visible
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4)
+
+  &--favourite
+    border-color: rgba(255, 210, 50, 0.5)
+    background: rgba(255, 210, 50, 0.07)
+
+    &:hover
+      background: rgba(255, 210, 50, 0.12)
+
+  &--live
+    border-color: rgba(80, 220, 120, 0.4)
+    background: rgba(80, 220, 120, 0.06)
+
+    &:hover
+      background: rgba(80, 220, 120, 0.1)
+
+// ─── League row ───────────────────────────────────────────────────────────────
+
+.football-league
+  display: flex
+  align-items: center
+  gap: 0.4em
+  margin-bottom: 0.45em
+
+  &--compact
+    margin-bottom: 0.3em
+    min-height: 1em
+
+.football-league-logo
+  height: 1em
+  width: 1em
+  object-fit: contain
+  flex-shrink: 0
+
+.football-league-name
+  font-size: 0.7em
+  opacity: 0.65
+  font-weight: 500
+  text-transform: uppercase
+  letter-spacing: 0.04em
+  flex: 1
+
+// ─── Status badge ─────────────────────────────────────────────────────────────
+
+.football-status
+  font-size: 0.65em
+  font-weight: 700
+  letter-spacing: 0.05em
+  border-radius: 4px
+  padding: 0.15em 0.45em
+  flex-shrink: 0
+
+  &--live
+    background: rgba(80, 220, 120, 0.25)
+    color: #6effa0
+    display: flex
+    align-items: center
+    gap: 0.35em
+
+  &--finished
+    background: rgba(255, 255, 255, 0.1)
+    color: rgba(255, 255, 255, 0.5)
+
+.football-status-dot
+  width: 5px
+  height: 5px
+  border-radius: 50%
+  background: #6effa0
+  animation: football-pulse 1.4s ease-in-out infinite
+  flex-shrink: 0
+
+@keyframes football-pulse
+  0%, 100%
+    opacity: 1
+    transform: scale(1)
+  50%
+    opacity: 0.4
+    transform: scale(0.7)
+
+// ─── Matchup row ──────────────────────────────────────────────────────────────
+
+.football-matchup
+  display: grid
+  grid-template-columns: 1fr auto 1fr
+  align-items: center
+  gap: 0.5em
+
+.football-team
+  display: flex
+  align-items: center
+  gap: 0.4em
+  min-width: 0
+
+  &--home
+    flex-direction: row
+
+  &--away
+    flex-direction: row-reverse
+    text-align: right
+
+.football-team-logo
+  height: 1.4em
+  width: 1.4em
+  object-fit: contain
+  flex-shrink: 0
+
+.football-team-name
+  font-size: 0.78em
+  font-weight: 600
+  white-space: nowrap
+  overflow: hidden
+  text-overflow: ellipsis
+  opacity: 0.9
+
+// ─── Score / time block ───────────────────────────────────────────────────────
+
+.football-score-block
+  text-align: center
+  flex-shrink: 0
+
+.football-score
+  font-size: 1.05em
+  font-weight: 700
+  letter-spacing: 0.02em
+  white-space: nowrap
+
+.football-score-sep
+  font-size: 0.8em
+  opacity: 0.45
+  font-weight: 400
+
+.football-kickoff
+  font-size: 0.75em
+  opacity: 0.65
+  font-weight: 600
+  white-space: nowrap
+
+// ─── Favourite star ───────────────────────────────────────────────────────────
+
+.football-fav-star
+  position: absolute
+  top: 0.35em
+  right: 0.5em
+  font-size: 0.65em
+  color: #ffd232
+  opacity: 0.85
+  line-height: 1
+  pointer-events: none

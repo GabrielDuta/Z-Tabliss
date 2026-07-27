@@ -7,6 +7,7 @@ import countdown from "./countdown";
 import css from "./css";
 import currencyRates from "./currencyRates";
 import customText from "./customText";
+import football from "./football";
 import github from "./github";
 import greeting from "./greeting";
 import html from "./html";
@@ -34,6 +35,7 @@ import workHours from "./workHours";
 export const widgetConfigs = [
   // nba,
   binarytime,
+  football,
   bitcoin,
   countdown,
   css,

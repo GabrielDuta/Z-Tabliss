@@ -1,0 +1,34 @@
+.TimeSince
+  display: flex
+  flex-direction: column
+  gap: 0.5em
+
+  &--empty
+    opacity: 0.6
+
+  .timesince-empty-hint
+    font-size: 0.9em
+    font-style: italic
+
+  .timesince-row
+    display: flex
+    align-items: baseline
+    gap: 0.35em
+    font-size: 1.05em
+    line-height: 1.4
+
+    &__name
+      font-weight: 600
+      opacity: 0.95
+      white-space: nowrap
+
+    &__sep
+      opacity: 0.5
+
+    &__duration
+      font-weight: 400
+      opacity: 0.85
+      font-style: italic
+
+      &--future
+        opacity: 0.6

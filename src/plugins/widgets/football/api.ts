@@ -65,6 +65,18 @@ function todayDateString(): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+/**
+ * European leagues (PL, Serie A, La Liga, Bundesliga, UCL) run August → May.
+ * The API registers them under the year the season *started*, so:
+ *   Jan–June  → previous year  (e.g. in April 2026 the active season is 2025)
+ *   July–Dec  → current year   (e.g. in August 2026 the new 2026/27 season starts)
+ */
+function currentFootballSeason(): number {
+  const now = new Date();
+  const month = now.getMonth(); // 0-indexed: 0=Jan … 6=Jul
+  return month < 7 ? now.getFullYear() - 1 : now.getFullYear();
+}
+
 async function apiFetch(path: string): Promise<RawApiFixtureResponse> {
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: {
@@ -72,7 +84,15 @@ async function apiFetch(path: string): Promise<RawApiFixtureResponse> {
     },
   });
   if (!res.ok) throw new Error(`API-Football error: ${res.status}`);
-  return res.json();
+  const data = await res.json();
+  if (data.errors && Object.keys(data.errors).length > 0) {
+    const errorMsg =
+      typeof data.errors === "object"
+        ? JSON.stringify(data.errors)
+        : String(data.errors);
+    throw new Error(`API-Football error payload: ${errorMsg}`);
+  }
+  return data;
 }
 
 function mapFixture(fixture: RawFixtureItem): FootballGame {
@@ -115,13 +135,18 @@ export async function fetchFootballGames(
     const date = todayDateString();
 
     // Fetch all priority leagues in parallel
+    const season = currentFootballSeason();
     const results = await Promise.allSettled(
       PRIORITY_LEAGUE_IDS.map((leagueId) =>
-        apiFetch(
-          `/fixtures?date=${date}&league=${leagueId}&season=${new Date().getFullYear()}`,
-        ),
+        apiFetch(`/fixtures?date=${date}&league=${leagueId}&season=${season}`),
       ),
     );
+
+    const allRejected = results.every((r) => r.status === "rejected");
+    if (allRejected && results.length > 0) {
+      const firstError = (results[0] as PromiseRejectedResult).reason;
+      throw firstError || new Error("Failed to fetch football fixtures");
+    }
 
     let games: FootballGame[] = [];
 

@@ -1,11 +1,38 @@
 import "./Football.sass";
 
 import type { FC } from "react";
-import { useEffect } from "react";
 import { defineMessages, FormattedMessage, useIntl } from "react-intl";
 
+import { useCachedEffect } from "../../../hooks";
+import { MINUTES } from "../../../utils";
 import { fetchFootballGames } from "./api";
-import { defaultData, FootballGame, Props } from "./types";
+import { Cache, defaultData, FootballGame, Props } from "./types";
+
+const LIVE_STATUSES = new Set(["1H", "2H", "ET", "P", "BT", "HT"]);
+
+/**
+ * Returns the timestamp at which the cache should be considered expired.
+ *
+ * - Live games in progress  → re-fetch every 1 minute
+ * - Kick-off within 30 min  → re-fetch every 5 minutes
+ * - All finished / no games → re-fetch every 30 minutes
+ */
+function getExpiry(cache: Cache | undefined): number {
+  if (!cache) return 0; // no cache → fetch immediately
+
+  const hasLive = cache.games.some((g) => LIVE_STATUSES.has(g.status.short));
+  if (hasLive) return cache.timestamp + 1 * MINUTES;
+
+  const now = Date.now();
+  const hasImminent = cache.games.some((g) => {
+    if (g.status.short !== "NS") return false;
+    const kickoff = new Date(g.date).getTime();
+    return kickoff - now <= 30 * MINUTES && kickoff > now;
+  });
+  if (hasImminent) return cache.timestamp + 5 * MINUTES;
+
+  return cache.timestamp + 30 * MINUTES;
+}
 
 const messages = defineMessages({
   widgetTitle: {
@@ -212,9 +239,27 @@ const Football: FC<Props> = ({
 }) => {
   const intl = useIntl();
 
-  useEffect(() => {
-    fetchFootballGames(loader, data.favouriteTeams).then(setCache);
-  }, [data.favouriteTeams, loader, setCache]);
+  useCachedEffect(
+    () => {
+      fetchFootballGames(loader, data.favouriteTeams)
+        .then(setCache)
+        .catch((err) => {
+          console.warn(
+            "Football widget fetch failed, retaining cached data:",
+            err,
+          );
+          // If we already have cache, update timestamp to prevent constant refetching on error rate-limits
+          if (cache) {
+            setCache({
+              ...cache,
+              timestamp: Date.now(),
+            });
+          }
+        });
+    },
+    getExpiry(cache),
+    [data.favouriteTeams],
+  );
 
   const gameCount = cache?.games.length ?? 0;
 
@@ -242,7 +287,7 @@ const Football: FC<Props> = ({
       }
     >
       <span className="football-header-title">
-        { }⚽{" "}
+        {}⚽{" "}
         {data.collapsed && gameCount > 0 ? (
           <span className="football-header-count">
             <FormattedMessage
@@ -256,7 +301,7 @@ const Football: FC<Props> = ({
           <FormattedMessage {...messages.widgetTitle} />
         )}
       </span>
-      { }
+      {}
       <span className="football-toggle-btn" aria-hidden="true">
         {data.collapsed ? "▸" : "▾"}
       </span>

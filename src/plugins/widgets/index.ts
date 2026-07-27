@@ -25,6 +25,7 @@ import search from "./search";
 import since from "./since";
 import tallyCounter from "./tallyCounter";
 import time from "./time";
+import timeSince from "./timeSince";
 import timeTracker from "./timeTracker";
 import todo from "./todo";
 import topSites from "./topSites";
@@ -54,6 +55,7 @@ export const widgetConfigs = [
   quote,
   search,
   since,
+  timeSince,
   time,
   todo,
   weather,

@@ -32,3 +32,41 @@
 
       &--future
         opacity: 0.6
+
+    &__picker-wrapper
+      position: relative
+      display: inline-flex
+      align-items: center
+      justify-content: center
+      margin-left: 0.25em
+
+    &__calendar-btn
+      display: inline-flex
+      align-items: center
+      justify-content: center
+      background: transparent
+      border: none
+      padding: 3px
+      color: inherit
+      opacity: 0.5
+      cursor: pointer
+      border-radius: 4px
+      transition: opacity 0.2s, background 0.2s
+
+      &:hover
+        opacity: 1
+        background: rgba(255, 255, 255, 0.15)
+
+    &__calendar-svg
+      display: block
+
+    &__date-input
+      position: absolute
+      top: 0
+      left: 0
+      width: 100%
+      height: 100%
+      opacity: 0
+      cursor: pointer
+      border: none
+

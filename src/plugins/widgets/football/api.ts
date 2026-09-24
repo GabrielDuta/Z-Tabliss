@@ -3,7 +3,11 @@ import { FootballGame } from "./types";
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 
-const API_KEY = "ae836f9f0f8853a2e10ee3c16b15c767";
+const DEFAULT_API_KEY = "ae836f9f0f8853a2e10ee3c16b15c767";
+const API_KEY =
+  typeof FOOTBALL_API_KEY !== "undefined" && FOOTBALL_API_KEY
+    ? FOOTBALL_API_KEY
+    : DEFAULT_API_KEY;
 const BASE_URL = "https://v3.football.api-sports.io";
 
 /**
@@ -133,8 +137,9 @@ export async function fetchFootballGames(
 
   try {
     const date = todayDateString();
+    let games: FootballGame[] = [];
 
-    // Fetch all priority leagues in parallel
+    // Attempt parallel fetch for priority leagues first
     const season = currentFootballSeason();
     const results = await Promise.allSettled(
       PRIORITY_LEAGUE_IDS.map((leagueId) =>
@@ -142,34 +147,30 @@ export async function fetchFootballGames(
       ),
     );
 
-    const allRejected = results.every((r) => r.status === "rejected");
-    if (allRejected && results.length > 0) {
-      const firstError = (results[0] as PromiseRejectedResult).reason;
-      throw firstError || new Error("Failed to fetch football fixtures");
-    }
-
-    let games: FootballGame[] = [];
-
     for (const result of results) {
       if (result.status === "fulfilled" && result.value?.response) {
         games.push(...result.value.response.map(mapFixture));
       }
     }
 
-    // Fallback: if no priority-league games today, fetch any top fixtures today
+    // Fallback: if priority-league query returns no games (e.g. offseason or plan restrictions on league/season),
+    // fetch all fixtures for today
     if (games.length === 0) {
       try {
         const fallback = await apiFetch(`/fixtures?date=${date}`);
         if (fallback?.response) {
-          // Take up to 20 games across all leagues, sorted by status (live first)
-          games = fallback.response.slice(0, 20).map(mapFixture);
+          games = fallback.response.map(mapFixture);
         }
-      } catch {
-        // If fallback also fails, return empty
+      } catch (err) {
+        console.warn("Football API fallback fetch failed:", err);
       }
     }
 
-    // Sort: live games first, then upcoming, then finished
+    const leaguePriority = (id: number): number => {
+      const idx = PRIORITY_LEAGUE_IDS.indexOf(id);
+      return idx !== -1 ? idx : 999;
+    };
+
     const statusOrder = (s: string): number => {
       if (["1H", "2H", "ET", "P", "BT", "HT"].includes(s)) return 0; // live
       if (s === "NS") return 1; // not started
@@ -180,8 +181,17 @@ export async function fetchFootballGames(
       const aFav = isFavourite(a, favouriteTeams) ? 0 : 1;
       const bFav = isFavourite(b, favouriteTeams) ? 0 : 1;
       if (aFav !== bFav) return aFav - bFav;
+
+      const aPrio = leaguePriority(a.leagueId);
+      const bPrio = leaguePriority(b.leagueId);
+      if (aPrio !== bPrio) return aPrio - bPrio;
+
       return statusOrder(a.status.short) - statusOrder(b.status.short);
     });
+
+    if (games.length > 25) {
+      games = games.slice(0, 25);
+    }
 
     // Tag favourites
     games = games.map((g) => ({

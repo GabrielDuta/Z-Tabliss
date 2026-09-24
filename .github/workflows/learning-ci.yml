@@ -45,24 +45,7 @@ jobs:
     needs: lint-and-format # Job dependency: Stage 2 waits for Stage 1
 
     steps:
-      - name: Check out repository code
-        uses: actions/checkout@v6
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-
-      - name: Set up Node.js (v24) with pnpm caching
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile --prefer-offline
-
-      - name: Run TypeScript type check and unit tests (rstest)
-        run: pnpm test
-
+      - template: ./unit-tests.yml
   # =========================================================================
   # STAGE 3: Build Matrix Across Browsers/Platforms
   # (Runs in parallel across targets after Stage 2 passes)

@@ -131,6 +131,7 @@ const config = {
       UNSPLASH_API_KEY: JSON.stringify(process.env.UNSPLASH_API_KEY),
       NASA_API_KEY: JSON.stringify(process.env.NASA_API_KEY),
       TRELLO_API_KEY: JSON.stringify(process.env.TRELLO_API_KEY),
+      FOOTBALL_API_KEY: JSON.stringify(process.env.FOOTBALL_API_KEY),
     }),
   ].filter(Boolean),
   devtool: isWeb || !isProduction ? "source-map" : false,

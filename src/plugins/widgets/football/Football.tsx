@@ -1,6 +1,6 @@
 import "./Football.sass";
 
-import type { FC } from "react";
+import { FC, useState } from "react";
 import { defineMessages, FormattedMessage, useIntl } from "react-intl";
 
 import { useCachedEffect } from "../../../hooks";
@@ -234,10 +234,10 @@ const Football: FC<Props> = ({
   cache,
   data = defaultData,
   setCache,
-  setData,
   loader,
 }) => {
   const intl = useIntl();
+  const [collapsed, setCollapsed] = useState(false);
 
   useCachedEffect(
     () => {
@@ -254,6 +254,11 @@ const Football: FC<Props> = ({
               ...cache,
               timestamp: Date.now(),
             });
+          } else {
+            setCache({
+              games: [],
+              timestamp: Date.now(),
+            });
           }
         });
     },
@@ -264,7 +269,7 @@ const Football: FC<Props> = ({
   const gameCount = cache?.games.length ?? 0;
 
   function toggleCollapsed() {
-    setData({ ...data, collapsed: !data.collapsed });
+    setCollapsed((prev) => !prev);
   }
 
   // ── Header bar (always visible) ──────────────────────────────────────────
@@ -276,19 +281,19 @@ const Football: FC<Props> = ({
       tabIndex={0}
       onKeyDown={(e) => e.key === "Enter" && toggleCollapsed()}
       title={
-        data.collapsed
+        collapsed
           ? intl.formatMessage(messages.showGames)
           : intl.formatMessage(messages.hideGames)
       }
       aria-label={
-        data.collapsed
+        collapsed
           ? intl.formatMessage(messages.expandWidget)
           : intl.formatMessage(messages.collapseWidget)
       }
     >
       <span className="football-header-title">
         {}⚽{" "}
-        {data.collapsed && gameCount > 0 ? (
+        {collapsed && gameCount > 0 ? (
           <span className="football-header-count">
             <FormattedMessage
               id="plugins.football.gamesTodayCount"
@@ -303,12 +308,12 @@ const Football: FC<Props> = ({
       </span>
       {}
       <span className="football-toggle-btn" aria-hidden="true">
-        {data.collapsed ? "▸" : "▾"}
+        {collapsed ? "▸" : "▾"}
       </span>
     </div>
   );
 
-  if (data.collapsed) {
+  if (collapsed) {
     return (
       <div className="football-container football-container--collapsed">
         {header}

@@ -1,0 +1,130 @@
+name: Learning Multi-Stage CI Pipeline
+
+# Trigger conditions: Run on push to main/master, pull requests, or manually via workflow_dispatch
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  # =========================================================================
+  # STAGE 1: Code Quality & Formatting
+  # =========================================================================
+  lint-and-format:
+    name: "Stage 1: Lint & Code Quality"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js (v24) with pnpm caching
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Run ESLint
+        run: pnpm run lint
+
+  # =========================================================================
+  # STAGE 2: Automated Testing & Type Checking
+  # (Depends on Stage 1 completing successfully)
+  # =========================================================================
+  unit-tests:
+    name: "Stage 2: Typecheck & Unit Tests"
+    runs-on: ubuntu-latest
+    needs: lint-and-format # Job dependency: Stage 2 waits for Stage 1
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js (v24) with pnpm caching
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Run TypeScript type check and unit tests (rstest)
+        run: pnpm test
+
+  # =========================================================================
+  # STAGE 3: Build Matrix Across Browsers/Platforms
+  # (Runs in parallel across targets after Stage 2 passes)
+  # =========================================================================
+  build-matrix:
+    name: "Stage 3: Build (${{ matrix.target }})"
+    runs-on: ubuntu-latest
+    needs: unit-tests # Job dependency: Stage 3 waits for Stage 2
+
+    # Matrix strategy allows building multiple targets concurrently
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [chromium, firefox, web]
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js (v24) with pnpm caching
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Build target (${{ matrix.target }})
+        run: pnpm run build:${{ matrix.target }}
+        env:
+          GIPHY_API_KEY: ${{ secrets.GIPHY_API_KEY }}
+          UNSPLASH_API_KEY: ${{ secrets.UNSPLASH_API_KEY }}
+          NASA_API_KEY: ${{ secrets.NASA_API_KEY }}
+          TRELLO_API_KEY: ${{ secrets.TRELLO_API_KEY }}
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: z-tabliss-dist-${{ matrix.target }}
+          path: dist/${{ matrix.target }}
+          retention-days: 7
+
+  # =========================================================================
+  # STAGE 4: Pipeline Summary & Status Report
+  # (Runs after Stage 3, even if previous steps fail, to summarize results)
+  # =========================================================================
+  workflow-summary:
+    name: "Stage 4: Workflow Summary"
+    runs-on: ubuntu-latest
+    needs: [lint-and-format, unit-tests, build-matrix]
+    if: always() # Run regardless of whether previous stages passed or failed
+
+    steps:
+      - name: Generate Summary Report
+        run: |
+          echo "## 🚀 CI Pipeline Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🎨 **Stage 1: Lint & Code Quality** | ${{ needs.lint-and-format.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🧪 **Stage 2: Typecheck & Tests** | ${{ needs.unit-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📦 **Stage 3: Build Matrix** | ${{ needs.build-matrix.result }} |" >> $GITHUB_STEP_SUMMARY
